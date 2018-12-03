@@ -2,6 +2,7 @@
 using System.Data;
 using System.Threading;
 using Oracle.ManagedDataAccess.Client;
+using NDesk.Options;
 namespace Oracle_Process
 {
     class Program
@@ -9,13 +10,28 @@ namespace Oracle_Process
         static void Main(string[] args)
         {
             OracleConnection _conn = new OracleConnection();
+            string datasource = "";
+            string userid = "";
+            string password = "";
             string process_type = "";
             string client_id = "";
             string purchase_no = "";
             decimal? purchase_pk_no = 0;
             Boolean retry_q = true;
             Boolean retry_p = true;
-            _conn.ConnectionString = @"Data Source=172.23.200.71:1521/Orclstg;Persist Security Info=True;User ID=IPTV;Password=IPTV";
+
+            OptionSet _p = new OptionSet()
+            {
+                {"db|DataSource=","the DataSource is {DATASOURCE}",
+       db => datasource = db  },
+       {"u|Userid=","the UserId is {USERID}",
+       u => userid = u  },
+       {"p|Password=","the DataSource is {Password}",
+       p => password = p  }
+            };
+            _p.Parse(args);
+
+            _conn.ConnectionString = @"Data Source="+datasource+";Persist Security Info=True;User ID="+userid+";Password="+password;
 
             while(true){
                 retry_q = true;
