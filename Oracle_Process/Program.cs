@@ -116,7 +116,7 @@ end;";
   purchase_msg purchase_msg_type;
 begin
   purchase_msg := new purchase_msg_type(:CLIENT_ID,:PURCHASE_PK_NO,:PURCHASE_NO,:PROCESS_TYPE);
-  purchase_callback_procedure_bk(purchase_msg => purchase_msg);
+  purchase_callback_procedure(purchase_msg => purchase_msg);
 end;";
                             OracleCommand _comm_p = new OracleCommand(_sql_p, _conn);
                             if (purchase_pk_no == null) { purchase_pk_no = 0; }
