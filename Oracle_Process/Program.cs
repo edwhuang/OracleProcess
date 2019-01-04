@@ -51,7 +51,7 @@ namespace Oracle_Process
   purchase_msg         purchase_msg_type;
   v_retry_cnt          number(16);
 begin
-v_dequeue_options.wait := 1800;
+v_dequeue_options.wait := 180;
   dbms_aq.dequeue(queue_name         => 'purchase_msg_queue',
                   dequeue_options    => v_dequeue_options,
                   message_properties => v_message_properties,
