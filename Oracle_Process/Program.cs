@@ -32,7 +32,7 @@ namespace Oracle_Process
        {"q|queue_name=","the Queue is {Queue_Name}",
        q => queue_name = q  }
             };
-         //   _p.Parse(args);
+            _p.Parse(args);
 
             
 
