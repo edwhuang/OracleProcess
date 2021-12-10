@@ -10,12 +10,13 @@ namespace Oracle_Process
         static void Main(string[] args)
         {
             OracleConnection _conn = new OracleConnection();
-            string datasource = "";
-            string userid = "";
-            string password = "";
+            string datasource = "da-oracledb.svc.litv.tv:1521/orcl";
+            string userid = "iptv";
+            string password = "iptv";
             string process_type = "";
             string client_id = "";
             string purchase_no = "";
+            string queue_name = "purchase_msg_queue";
             decimal? purchase_pk_no = 0;
             Boolean retry_q = true;
             Boolean retry_p = true;
@@ -27,11 +28,13 @@ namespace Oracle_Process
        {"u|Userid=","the UserId is {USERID}",
        u => userid = u  },
        {"p|Password=","the DataSource is {Password}",
-       p => password = p  }
+       p => password = p  },
+       {"q|queue_name=","the Queue is {Queue_Name}",
+       q => queue_name = q  }
             };
-            _p.Parse(args);
+         //   _p.Parse(args);
 
-            _conn.ConnectionString = @"Data Source="+datasource+";Persist Security Info=True;User ID="+userid+";Password="+password;
+            
 
             // _conn.ConnectionString = @"Data Source=172.23.200.71:1521/orclstg " + ";Persist Security Info=True;User ID=iptv;Password=iptv";
 
@@ -41,6 +44,8 @@ namespace Oracle_Process
                     try
                     {
                         retry_q = false;
+                        _conn = new OracleConnection();
+                        _conn.ConnectionString = @"Data Source=" + datasource + ";Persist Security Info=True;User ID=" + userid + ";Password=" + password;
                         _conn.Open();
                         Console.WriteLine(DateTime.Now.ToString() + " " + "Connect to oracle database ....");
 
@@ -51,8 +56,10 @@ namespace Oracle_Process
   purchase_msg         purchase_msg_type;
   v_retry_cnt          number(16);
 begin
-v_dequeue_options.wait := 180;
-  dbms_aq.dequeue(queue_name         => 'purchase_msg_queue',
+v_dequeue_options.wait :=20;
+v_dequeue_options.navigation := DBMS_AQ.FIRST_MESSAGE;
+v_dequeue_options.dequeue_mode:=dbms_aq.remove;
+  dbms_aq.dequeue(queue_name         => '" + queue_name+@"',
                   dequeue_options    => v_dequeue_options,
                   message_properties => v_message_properties,
                   payload            => purchase_msg,
@@ -63,6 +70,7 @@ v_dequeue_options.wait := 180;
   :PROCESS_TYPE:= purchase_msg.process_type;
 end;";
                         OracleCommand _comm_q = new OracleCommand(_sql_q, _conn);
+                        _comm_q.CommandTimeout = 30;
                         _comm_q.BindByName = true;
 
                         client_id = "";
@@ -75,34 +83,53 @@ end;";
                         _comm_q.Parameters.Add("PURCHASE_NO", OracleDbType.Char, 64, purchase_no, ParameterDirection.Output);
                         _comm_q.Parameters.Add("PROCESS_TYPE", OracleDbType.Char, 32, process_type, ParameterDirection.Output);
 
-                        _comm_q.ExecuteNonQuery();
-                        client_id = Convert.ToString(_comm_q.Parameters["CLIENT_ID"].Value).Trim();
-                        purchase_no = Convert.ToString(_comm_q.Parameters["PURCHASE_NO"].Value).Trim();
-                        process_type = Convert.ToString(_comm_q.Parameters["PROCESS_TYPE"].Value).Trim();
-                        purchase_pk_no = Convert.ToDecimal(_comm_q.Parameters["PURCHASE_PK_NO"].Value.ToString());
-                        Console.WriteLine(DateTime.Now.ToString() + " " + "Recevre " + process_type);
-                        Console.WriteLine(DateTime.Now.ToString() + " " + "Client ID " + client_id);
-                        Console.WriteLine(DateTime.Now.ToString() + " " + "Purchase NO " + purchase_no);
-                        retry_q = false;
-                        _comm_q.Dispose();
+                        try
+                        {
+                            _comm_q.ExecuteNonQuery();
+                            client_id = Convert.ToString(_comm_q.Parameters["CLIENT_ID"].Value).Trim();
+                            purchase_no = Convert.ToString(_comm_q.Parameters["PURCHASE_NO"].Value).Trim();
+                            process_type = Convert.ToString(_comm_q.Parameters["PROCESS_TYPE"].Value).Trim();
+                            purchase_pk_no = Convert.ToDecimal(_comm_q.Parameters["PURCHASE_PK_NO"].Value.ToString());
+                            Console.WriteLine(DateTime.Now.ToString() + " " + "Recevre " + process_type);
+                            Console.WriteLine(DateTime.Now.ToString() + " " + "Client ID " + client_id);
+                            Console.WriteLine(DateTime.Now.ToString() + " " + "Purchase NO " + purchase_no);
+                            retry_q = false;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(DateTime.Now.ToString() + " " + ex.Message);
+                           
+                            _conn.Close();
+                            _conn.Dispose();
+                            if (ex.Message.IndexOf("ORA-0406") >= 0)
+                            {
+                                Console.WriteLine(DateTime.Now.ToString() + " " + "Wait30 sec Retry again ...");
+                                retry_q = true;
+                                Thread.Sleep(30000);
+                            }
+                        }
+                        finally
+                        {
+                            _comm_q.Dispose();
+                        }
 
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine(DateTime.Now.ToString()+" "+ex.Message);
+                      
+                        _conn.Close();
                         if (ex.Message.IndexOf("ORA-0406") >= 0)
                         {
-
-                            Console.WriteLine(DateTime.Now.ToString() + " "+"Wait 1 min Retry again ...");
+                            Console.WriteLine(DateTime.Now.ToString() + " "+"Wait30 sec Retry again ...");
                             retry_q = true;
-                            Thread.Sleep(60000);
+                            Thread.Sleep(30000);
                         }
-
-
                     }
                     finally
                     {
                         _conn.Close();
+                        _conn.Dispose();
                     }
                 }
 
@@ -113,6 +140,8 @@ end;";
                     {
                         try
                         {
+                            _conn = new OracleConnection();
+                            _conn.ConnectionString = @"Data Source=" + datasource + ";Persist Security Info=True;User ID=" + userid + ";Password=" + password;
 
                             _conn.Open();
                             string _sql_p = @"declare
@@ -142,14 +171,15 @@ end;";
                             if (ex.Message.IndexOf("ORA-0406") >= 0
                             || ex.Message.IndexOf("ORA-06") >= 0)
                             {
-                                Console.WriteLine("Wait 1 min Retry again ...");
-                                Thread.Sleep(60000);
+                                Console.WriteLine("Wait 30 sec Retry again ...");
+                                Thread.Sleep(30000);
                                 retry_p = true;
                             }
                         }
                         finally
                         {
                             _conn.Close();
+                            _conn.Dispose();
                         }
 
                     }
