@@ -16,7 +16,7 @@ namespace Oracle_Process
             string process_type = "";
             string client_id = "";
             string purchase_no = "";
-            string queue_name = "purchase_msg_queue";
+            string queue_name = "";
             decimal? purchase_pk_no = 0;
             Boolean retry_q = true;
             Boolean retry_p = true;
