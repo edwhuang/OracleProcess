@@ -97,7 +97,10 @@ end;";
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(DateTime.Now.ToString() + " " + ex.Message);
+                            if (ex.Message.IndexOf("ORA-025") < 0)
+                            {
+                                Console.WriteLine(DateTime.Now.ToString() + " " + ex.Message);
+                            }
                            
                             _conn.Close();
                             _conn.Dispose();
