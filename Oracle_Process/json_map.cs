@@ -145,7 +145,7 @@ namespace Oracle_Process
             _map_sub = new Dictionary<string, string>();
 
             _map_c.Add("SERIAL_ID", "client_id");
-            _map_c.Add("OWNER_PHONE", "phone");
+            _map_c.Add("OWNER_PHONE", "phone_no");
             _map_c.Add("_SUBSCRIPTIONS_", "subscriptions");
 
             _map_sub.Add("transaction_id", "transaction_id");
@@ -190,6 +190,8 @@ namespace Oracle_Process
 
             content = content.Replace("_SUBSCRIPTIONS_", content_sub);
             json_call = json_call.Replace("_PARAMS_", content);
+            Console.WriteLine(_url);
+            Console.WriteLine(json_call);
             return jp.HttpRequest(_url, json_call);
         }
 
