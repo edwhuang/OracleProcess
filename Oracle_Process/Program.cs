@@ -16,11 +16,12 @@ namespace Oracle_Process
             string process_type = "";
             string client_id = "";
             string purchase_no = "";
-            string queue_name = "";
+            string queue_name = "purchase_msg_queue";
             decimal? purchase_pk_no = 0;
             Boolean retry_q = true;
             Boolean retry_p = true;
-
+            string account_center_url = "https://dev-setaccinfo.svc.litv.tv/lambda/SaveAccountInfo";
+            account_center_mapper ac = new account_center_mapper(account_center_url);
             OptionSet _p = new OptionSet()
             {
                 {"db|DataSource=","the DataSource is {DATASOURCE}",
@@ -30,7 +31,9 @@ namespace Oracle_Process
        {"p|Password=","the DataSource is {Password}",
        p => password = p  },
        {"q|queue_name=","the Queue is {Queue_Name}",
-       q => queue_name = q  }
+       q => queue_name = q  },
+       {"q|queue_name=","the Account center url is {account_center_url}",
+       acc_url => account_center_url = acc_url  }
             };
             _p.Parse(args);
 
@@ -181,6 +184,8 @@ end;";
                         }
                         finally
                         {
+                            Console.WriteLine(ac.set_account_center(client_id, _conn));
+
                             _conn.Close();
                             _conn.Dispose();
                         }
