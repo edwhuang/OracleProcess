@@ -32,7 +32,7 @@ namespace Oracle_Process
        p => password = p  },
        {"q|queue_name=","the Queue is {Queue_Name}",
        q => queue_name = q  },
-       {"q|queue_name=","the Account center url is {account_center_url}",
+       {"acc_url|account_url=","the Account center url is {account_center_url}",
        acc_url => account_center_url = acc_url  }
             };
             _p.Parse(args);
